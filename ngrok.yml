@@ -1,0 +1,9 @@
+version: 2
+authtoken: 2ZGRholRzKZefsM6912sYF2E7SZ_53VYegDFHrSCf26buRxZV
+tunnels:
+  first:
+    proto: http
+    addr: https://factual-hedgehog-loudly.ngrok-free.app:5137
+  second:
+    proto: http
+    addr: https://factual-hedgehog-loudly.ngrok-free.app:3000

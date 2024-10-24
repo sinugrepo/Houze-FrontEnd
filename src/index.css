@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.slide-transition {
+    transition: transform 0.5s ease-in-out;
+  }
+  
+  .slide-transition-enter {
+    transform: translateX(100%);
+  }
+  
+  .slide-transition-enter-active {
+    transform: translateX(0);
+  }
+  
+  .slide-transition-leave {
+    transform: translateX(0);
+  }
+  
+  .slide-transition-leave-active {
+    transform: translateX(-100%);
+  }
+
+  .bg-space {
+    background: url('https://placehold.co/600x400') no-repeat center center;
+    background-size: cover;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
