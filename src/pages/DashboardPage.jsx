@@ -7,6 +7,7 @@ import InsertData from "../components/InsertData.jsx";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import DashboardContent from "../components/DashboardContent.jsx";
+import AddCatalog from "../components/AddCatalog.jsx";
 
 export default function DashboardPage() {
   const [isNavOpen, setIsNavOpen] = useState(window.innerWidth >= 768);
@@ -56,26 +57,6 @@ export default function DashboardPage() {
   const renderContent = () => {
     switch (activePage) {
       case "Dashboard":
-        // return (
-        //   <div className="grid grid-cols-2 gap-4">
-        //     <div className="bg-blue-500 text-white p-4 md:p-8 rounded">
-        //       <h2 className="text-sm md:text-lg">Today Total Order</h2>
-        //       <p className="text-2xl md:text-4xl font-bold">12</p>
-        //     </div>
-        //     <div className="bg-yellow-500 text-white p-4 md:p-8 rounded">
-        //       <h2 className="text-sm md:text-lg">Pending Order</h2>
-        //       <p className="text-2xl md:text-4xl font-bold">12</p>
-        //     </div>
-        //     <div className="bg-green-500 text-white p-4 md:p-8 rounded">
-        //       <h2 className="text-sm md:text-lg">Complete Order</h2>
-        //       <p className="text-2xl md:text-4xl font-bold">12</p>
-        //     </div>
-        //     <div className="bg-red-500 text-white p-4 md:p-8 rounded">
-        //       <h2 className="text-sm md:text-lg">Cancel Order</h2>
-        //       <p className="text-2xl md:text-4xl font-bold">12</p>
-        //     </div>
-        //   </div>
-        // );
         return <DashboardContent />;
       case "E-Booking":
         return (
@@ -97,7 +78,7 @@ export default function DashboardPage() {
                   >
                     KEMBALI
                   </button>
-                  <InsertData />
+                  <AddCatalog />
                 </>
               ) : (
                 <>
@@ -123,7 +104,7 @@ export default function DashboardPage() {
   return (
     <div className="flex h-screen">
       {isNavOpen && (
-        <div className="w-full md:w-1/4 bg-gradient-to-b from-[#CDAB9E] to-[#CD8668] p-4 fixed md:relative h-full md:h-auto z-50">
+        <div className="w-full md:w-1/4 bg-zinc-100 shadow-xl p-4 fixed md:relative h-full md:h-auto z-50">
           <div className="flex items-center justify-between mb-8">
             <img
               src={logo}
@@ -135,10 +116,7 @@ export default function DashboardPage() {
               onClick={() => setIsNavOpen(false)}
             ></i>
           </div>
-          {/* <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-white">Houze Studio</h1>
-          </div> */}
-          <div className="text-white">
+          <div className="text-black">
             <h2 className="text-lg font-bold mb-4">MENU</h2>
             <ul>
               <li

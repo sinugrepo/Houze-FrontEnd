@@ -1,35 +1,55 @@
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useEffect, useState } from "react";
+import Swal from "sweetalert2";
 
 const DetailItemBooking = () => {
   const { id } = useParams();
-  const [catalogData, setCatalogData] = useState({});
+  const [catalogData, setCatalogData] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedImage, setSelectedImage] = useState("");
+  const [selectedType, setSelectedType] = useState(0);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  // const [currentPrice, setPrice] = useState(0);
-  // const [currentCatalog, setCatalog] = useState("");
   const [count, setCount] = useState(1);
+  const [countType, setCountType] = useState(0);
+
   const [basePrice, setBasePrice] = useState(0);
+  const [extras, setExtras] = useState({});
+  const [extrasPrice, setExtrasPrice] = useState(0);
+  const [isAddPersonOpen, setIsAddPersonOpen] = useState(false);
+  const [isTypeAddPersonOpen, setIsTypeAddPersonOpen] = useState(false);
+
   const navigate = useNavigate();
 
-  const priceTemp = localStorage.getItem("priceTemp") || "";
+  const sumPriceType = parseInt(localStorage.getItem("priceTypeTemp") || 0);
+  const sumExtra = parseInt(localStorage.getItem("extraPrice") || 0);
+  const sumBaseExtra = basePrice + sumExtra + sumPriceType;
+  const handleClosePreview = () => {
+    setIsPreviewOpen(false);
+    setSelectedImage("");
+  };
 
   const handleImageClick = (imageUrl) => {
     setIsPreviewOpen(true);
     setSelectedImage(imageUrl);
   };
 
-  const handleClosePreview = () => {
-    setIsPreviewOpen(false);
-    setSelectedImage("");
-  };
-
   const handleNext = () => {
+    const selectedExtras = catalogData.catalog_etc
+      .filter((extra) => extras[extra.id_etc]) // hanya item yang dicentang
+      .map((extra) => ({
+        id: extra.id_etc,
+        description: extra.description,
+        price: extra.price,
+      }));
+
+    // Simpan array ke dalam localStorage dalam format JSON
+    localStorage.setItem("selectedExtras", JSON.stringify(selectedExtras));
+    
+    console.log("TOTAL PRICE",sumBaseExtra);
     localStorage.setItem("person", count);
-    localStorage.setItem("price", basePrice);
-    navigate(`/booking/${id}/time`); // Navigasi ke halaman 'time' dengan id yang sama
+    localStorage.setItem("price", sumBaseExtra);
+    navigate(`/booking/${id}/time`);
   };
 
   const handleNextImage = () => {
@@ -46,34 +66,166 @@ const DetailItemBooking = () => {
     );
   };
 
+  const pricePerson = parseInt(localStorage.getItem("pricePerson")) || 0;
 
   const handleIncrement = () => {
     setCount((prevCount) => {
       const newCount = prevCount + 1;
-      if(newCount > 2){
-        setBasePrice(priceTemp * (newCount - 1));
-      }
-      console.log(newCount);
+      const newExtraPrice = extrasPrice + pricePerson; // Tambahkan harga per orang
+
+      setExtrasPrice(newExtraPrice);
+      localStorage.setItem("extraPrice", newExtraPrice);
+
       return newCount;
-    });
-  };  
-  
-  const handleDecrement = () => {
-    setCount((prevCount) => {
-      if (prevCount > 1) {
-        const newCount = prevCount - 1;
-        if (newCount < 3) {
-          setBasePrice(priceTemp * 1);
-        }else{
-          setBasePrice(priceTemp * (newCount - 1));
-        }
-        console.log(newCount);
-        return newCount;
-      }
-      return prevCount; // Return prevCount if no decrement happens
     });
   };
 
+  const handleDecrement = () => {
+    setCount((prevCount) => {
+      if (prevCount > 1) {
+        // Cek agar tidak mencapai 0
+        const newCount = prevCount - 1;
+        const newExtraPrice = extrasPrice - pricePerson;
+
+        setExtrasPrice(newExtraPrice);
+        localStorage.setItem("extraPrice", newExtraPrice);
+
+        return newCount;
+      }
+      return prevCount; // Tidak mengubah count jika sudah di 1
+    });
+  };
+
+  const handleDecrementType = () => {
+    setCountType((prevCount) => {
+      if (prevCount > 1) {
+        const newCount = prevCount - 1;
+        const priceTemp = parseInt(localStorage.getItem("priceTemp"), 10);
+        if (newCount > 0){
+          const totalPriceType = priceTemp * (newCount - 1);
+
+          // Update total price and base price
+          localStorage.setItem("priceTypeTemp", totalPriceType);
+          // setBasePrice(totalPriceType);
+  
+          console.log("Decrement:", newCount);
+          console.log(newCount, "COUNT TYPE after decrement");
+          console.log(totalPriceType, "TOTAL")
+        }else{
+          const totalPriceType = priceTemp * newCount;
+
+          // Update total price and base price
+          localStorage.setItem("priceTypeTemp", totalPriceType);
+          // setBasePrice(totalPriceType);
+  
+          console.log("Decrement:", newCount);
+          console.log(newCount, "COUNT TYPE after decrement");
+          console.log(totalPriceType, "TOTAL")
+        }
+        return newCount;
+      } else {
+        // If countType is already at minimum (1)
+        const priceTemp = parseInt(localStorage.getItem("priceTemp"), 10);
+
+        localStorage.setItem("priceTypeTemp", 0);
+        setBasePrice(priceTemp);
+
+        console.log("Minimum count reached:", prevCount);
+        prevCount = 0;
+        return prevCount;
+      }
+    });
+  };
+
+  const handleIncrementType = () => {
+    const selectedId = localStorage.getItem("catalog_type_id") || null;
+    const typeItem = catalogData?.types?.find((type) => type.id === selectedId);
+    console.log(selectedId, "tipe id");
+    console.log(typeItem, "max");
+
+    if (!typeItem) return;
+
+    setCountType((prevCount) => {
+      const newCount = prevCount + 1;
+
+      if (typeItem.maxperson >= newCount) {
+        if (newCount === 1) {
+          // Pastikan `newCount` sesuai `maxperson`
+          const totalPriceType = 0;
+          localStorage.setItem("priceTypeTemp", totalPriceType);
+          console.log("Increment:", newCount); // Debugging log
+          console.log(totalPriceType, "TOTAL")
+        } else {
+          const priceTemp = localStorage.getItem("priceTemp");
+          const totalPriceType = parseInt(priceTemp) * (newCount - 1);
+          localStorage.setItem("priceTypeTemp", totalPriceType);
+          console.log("Increment:", newCount); // Debugging log
+          console.log(totalPriceType, "TOTAL")
+        }
+        return newCount;
+      } else {
+        Swal.fire({
+          title: "Paket Ini Sudah Maksimal!",
+          text:
+            "Paket Ini Hanya Menampung " +
+            prevCount +
+            " Orang, Coba Ganti Paket Yang Lain atau Order Etc Tambah Orang!",
+          icon: "warning",
+        });
+        console.log("Maximum person reached");
+        return prevCount; // Tidak melebihi `maxperson`
+      }
+    });
+  };
+
+  const handleTypeChange = (event) => {
+    const selectedId = event.target.value;
+    const type = catalogData.types.find((t) => t.id === selectedId);
+    if (type.addperson === true) {
+      setIsTypeAddPersonOpen(true);
+    } else {
+      setIsTypeAddPersonOpen(false);
+    }
+    localStorage.setItem("catalog_type_id", selectedId);
+    setBasePrice(type.price);
+    setSelectedType(type);
+  };
+
+  const handleExtrasChange = (event, extraPrice, extraId) => {
+    const { checked } = event.target;
+    setExtras((prevExtras) => {
+      const updatedExtras = { ...prevExtras, [extraId]: checked };
+
+      // Cek apakah ada tambahan `addperson` yang aktif
+      const selectedAddPerson = catalogData.catalog_etc.find(
+        (extra) => extra.addperson && updatedExtras[extra.id_etc]
+      );
+
+      // Hitung ulang total harga dengan mempertimbangkan `addperson` berdasarkan `count`
+      const total = catalogData.catalog_etc.reduce((acc, extra) => {
+        if (updatedExtras[extra.id_etc]) {
+          return acc + (extra.addperson ? extra.price * count : extra.price);
+        }
+        return acc;
+      }, 0);
+
+      // Kelola state dan localStorage untuk `addperson`
+      if (selectedAddPerson) {
+        setIsAddPersonOpen(true);
+        localStorage.setItem("pricePerson", selectedAddPerson.price);
+      } else {
+        setIsAddPersonOpen(false);
+        setCount(1); // Reset count jika tidak ada `addperson` yang dipilih
+        localStorage.removeItem("pricePerson");
+      }
+
+      // Update localStorage dan state harga tambahan
+      localStorage.setItem("extraPrice", total);
+      setExtrasPrice(total);
+
+      return updatedExtras;
+    });
+  };
 
   useEffect(() => {
     console.log("Mengakses halaman detail");
@@ -89,11 +241,30 @@ const DetailItemBooking = () => {
       .then((response) => {
         console.log("Request API berhasil");
         localStorage.setItem("nameCatalog", response.data.data.catalog_name);
-        localStorage.setItem("priceTemp", response.data.data.price);
-        localStorage.setItem("typeCatalog", response.data.data.catalog_type);
+        localStorage.setItem("priceTemp", response.data.data.types[0].price);
+        localStorage.setItem("priceTypeTemp", 0)
+        localStorage.setItem("extraPrice", 0);
+
+        localStorage.setItem(
+          "typeCatalog",
+          response.data.data.types[0].catalog_type
+        );
+
+        if (response.data.data.types[0].addperson === true) {
+          setIsTypeAddPersonOpen(true);
+        }
+
+        localStorage.setItem("catalog_type_id", response.data.data.types[0].id);
         localStorage.setItem("catalog_id", id);
         setCatalogData(response.data.data);
-        setBasePrice(response.data.data.price);
+        console.log(response.data.data);
+        setBasePrice(response.data.data.types[0].price);
+        console.log(response.data.data.types[0].price);
+        const initialExtras = {};
+        response.data.data.catalog_etc.forEach((etc) => {
+          initialExtras[etc.id_etc] = false;
+        });
+        setExtras(initialExtras);
       })
       .catch((error) => {
         console.log("Request API gagal");
@@ -112,7 +283,7 @@ const DetailItemBooking = () => {
               <h1 className="text-2xl font-semibold">
                 {catalogData.catalog_name}
               </h1>
-              <p className="text-sm">{catalogData.catalog_type}</p>
+              <p className="text-sm"></p>
             </div>
             <div className="relative mb-6">
               <div className="flex justify-center slide-transition">
@@ -153,59 +324,140 @@ const DetailItemBooking = () => {
               <label className="block text-gray-700 text-sm font-bold mb-2">
                 {catalogData.catalog_name}
               </label>
-              <select className="block appearance-none w-full bg-white border border-gray-400 hover:border-gray-500 px-4 py-2 pr-8 rounded shadow leading-tight focus:outline-none focus:shadow-outline">
-                <option>Paket Reguler</option>
+              <select
+                className="block appearance-none w-full bg-white border border-gray-400 hover:border-gray-500 px-4 py-2 pr-8 rounded shadow leading-tight focus:outline-none focus:shadow-outline"
+                onChange={handleTypeChange}
+              >
+                {catalogData.types.map((type, index) => (
+                  <option key={index} value={type.id}>
+                    {type.catalog_type}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="text-gray-700 text-sm mb-4">
-              <p>
-                {catalogData.description ? (
-                  catalogData.description.split("\n").map((line, index) => (
+              {selectedType ? (
+                <p>
+                  {selectedType.description.split("\n").map((line, index) => (
                     <span key={index}>
                       {line}
                       <br />
                     </span>
-                  ))
-                ) : (
-                  <div>Loading...</div>
-                )}
-              </p>
+                  ))}
+                </p>
+              ) : (
+                <p>
+                  {catalogData.types[0].description
+                    .split("\n")
+                    .map((line, index) => (
+                      <span key={index}>
+                        {line}
+                        <br />
+                      </span>
+                    ))}
+                </p>
+              )}
             </div>
-            <div className="text-center mb-4">
-              <p className="text-gray-700 text-sm font-bold mb-2">
-                Jumlah Orang
-              </p>
-              <div className="flex items-center justify-center">
-                <button
-                  className="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-l"
-                  onClick={handleDecrement}
-                >
-                  -
-                </button>
-                <span className="bg-white text-gray-700 font-bold py-2 px-4 border-t border-b">
-                  {count}
-                </span>
-                <button
-                  className="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-r"
-                  onClick={handleIncrement}
-                >
-                  +
-                </button>
+            {isTypeAddPersonOpen && (
+              <div className="text-center mb-4">
+                <p className="text-gray-700 text-sm font-bold mb-2">
+                  Jumlah Orang
+                </p>
+                <div className="flex items-center justify-center">
+                  <button
+                    className="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-l"
+                    onClick={handleDecrementType}
+                  >
+                    -
+                  </button>
+                  <span className="bg-white text-gray-700 font-bold py-2 px-4 border-t border-b">
+                    {countType}
+                  </span>
+                  <button
+                    className="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-r"
+                    onClick={handleIncrementType}
+                  >
+                    +
+                  </button>
+                </div>
               </div>
+            )}
+            {/* Ripple Checkbox */}
+            <div className="mb-4">
+              <p className="text-gray-700 text-sm font-bold mb-2">
+                Tambahan Lainnya
+              </p>
+              {catalogData?.catalog_etc.map((extra) => (
+                <div key={extra.id_etc} className="flex items-center mb-2">
+                  <label
+                    className="relative flex cursor-pointer items-center rounded-full p-3"
+                    htmlFor={extra.id_etc}
+                    data-ripple-dark="true"
+                  >
+                    <input
+                      id={extra.id_etc}
+                      name={extra.id_etc}
+                      type="checkbox"
+                      className="peer relative h-5 w-5 cursor-pointer appearance-none rounded border border-slate-300 shadow hover:shadow-md transition-all before:absolute before:top-2/4 before:left-2/4 before:block before:h-12 before:w-12 before:-translate-y-2/4 before:-translate-x-2/4 before:rounded-full before:bg-slate-400 before:opacity-0 before:transition-opacity checked:border-slate-800 checked:bg-slate-800 checked:before:bg-slate-400 hover:before:opacity-10"
+                      checked={extras[extra.id_etc]}
+                      onChange={(e) =>
+                        handleExtrasChange(e, extra.price, extra.id_etc)
+                      }
+                    />
+                    <span className="pointer-events-none absolute top-2/4 left-2/4 -translate-y-2/4 -translate-x-2/4 text-white opacity-0 transition-opacity peer-checked:opacity-100">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-3.5 w-3.5"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        stroke="currentColor"
+                        strokeWidth="1"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          clipRule="evenodd"
+                        ></path>
+                      </svg>
+                    </span>
+                  </label>
+                  <label
+                    className="cursor-pointer text-slate-600 text-sm"
+                    htmlFor={extra.id_etc}
+                  >
+                    {extra.description}{" "}
+                    <b>(Rp.{extra.price.toLocaleString("id-ID")})</b>
+                  </label>
+                </div>
+              ))}
             </div>
+
+            {isAddPersonOpen && (
+              <div className="text-center mb-4">
+                <p className="text-gray-700 text-sm font-bold mb-2">
+                  Tambah Orang
+                </p>
+                <div className="flex items-center justify-center">
+                  <button
+                    className="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-l"
+                    onClick={handleDecrement}
+                  >
+                    -
+                  </button>
+                  <span className="bg-white text-gray-700 font-bold py-2 px-4 border-t border-b">
+                    {count}
+                  </span>
+                  <button
+                    className="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-r"
+                    onClick={handleIncrement}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="text-gray-700 text-lg font-bold mb-6">
-              {/* Harga:{" "}
-            {catalogData.price !== undefined && catalogData.price !== null
-              ? catalogData.price.toLocaleString("id-ID", {
-                  style: "currency",
-                  currency: "IDR",
-                })
-              : "Harga tidak tersedia"} */}
-              Harga:{" "}
-              {basePrice.toLocaleString("id-ID", {
-                style: "currency",
-                currency: "IDR",
-              })}
+              Harga: {basePrice ? sumBaseExtra.toLocaleString("id-ID") : 0}
             </div>
             <button
               className="w-full bg-[#CDAB9E] text-white font-bold py-2 px-4 rounded hover:bg-[#A6887C]"

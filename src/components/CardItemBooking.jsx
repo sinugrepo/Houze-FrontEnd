@@ -32,7 +32,9 @@ export default function CardItemBooking() {
             className="border rounded-lg overflow-hidden shadow-lg w-full md:w-72"
           >
             <img
-              src={catalog.catalog_images[0].image_url}
+              src={catalog.catalog_images && catalog.catalog_images.length > 0
+                ? catalog.catalog_images[0].image_url
+                : "https://placehold.co/286x256"}
               alt={catalog.catalog_name}
               className="w-full h-64 object-cover hover:object-cover"
             />

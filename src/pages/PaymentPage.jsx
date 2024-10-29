@@ -72,7 +72,7 @@ const PaymentPage = () => {
             <p className="text-gray-700">{formattedDateTime}</p>
             <p className="text-gray-700">
               Total Harga:{" "}
-              <span className="font-bold text-gray-900">Rp. {price}</span>
+              <span className="font-bold text-gray-900">Rp{parseInt(localStorage.getItem("totalPrice")).toLocaleString("id-ID")}</span>
             </p>
           </div>
           <p className="text-sm font-semibold mb-4">Pilih Metode Pembayaran</p>

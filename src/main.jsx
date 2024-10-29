@@ -68,9 +68,16 @@ const router = createBrowserRouter([
   },
 ]);
 
+// createRoot(document.getElementById("root")).render(
+//   <React.StrictMode>
+//     <ToastContainer />
+//     <RouterProvider router={router} />
+//   </React.StrictMode>
+// );
+
 createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
+  <>
     <ToastContainer />
     <RouterProvider router={router} />
-  </React.StrictMode>
+  </>
 );

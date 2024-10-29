@@ -2,11 +2,14 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 const ConfirmationPage = () => {
   const [nameCatalog, setNameCatalog] = useState("");
-  const [price, setPrice] = useState(0);
+  // const [price, setPrice] = useState(0);
   const [dateTime, setDateTime] = useState("");
   const [typeCatalog, setType] = useState("");
   const navigate = useNavigate();
 
+  // const storedExtraPrice = parseInt(localStorage.getItem("extraPrice"));
+  // const totalPrice = parseInt(storedExtraPrice +  price)
+  const totalPrice = parseInt(localStorage.getItem("price"));
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -87,7 +90,8 @@ const ConfirmationPage = () => {
             <p className="text-gray-700">{formattedDateTime}{console.log(formattedDateTime)}</p>
             <p className="text-gray-700">
               Total Harga:{" "}
-              <span className="font-bold text-gray-900">Rp. {price}</span>
+              <span className="font-bold text-gray-900">Rp{totalPrice.toLocaleString()}{localStorage.setItem("totalPrice", totalPrice)}</span>
+
             </p>
           </div>
           <form className="space-y-4 flex-grow">

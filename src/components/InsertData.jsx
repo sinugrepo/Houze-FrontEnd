@@ -1,8 +1,8 @@
 // eslint-disable-next-line no-unused-vars
 import React, { useState } from "react";
 import axios from "axios";
-import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const InsertData = () => {
   const [catalogName, setCatalogName] = useState("");
@@ -30,6 +30,7 @@ const InsertData = () => {
       }, 0);
     }
   };
+
   const handleImageChange = (event) => {
     setImages(event.target.files);
   };
@@ -141,7 +142,7 @@ const InsertData = () => {
           </label>
           <input
             type="file"
-            id=" images"
+            id="images"
             multiple
             onChange={handleImageChange}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"

@@ -4,7 +4,6 @@ import qris from "../assets/img/qris.jpg";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
 
-
 const ProofPayment = () => {
   const [image, setImage] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -14,10 +13,44 @@ const ProofPayment = () => {
     numberBankAccount: "",
     transfer: "",
   });
+
+  const price = parseFloat(localStorage.getItem("totalPrice"));
+  const priceCatalog = parseInt(localStorage.getItem("priceTemp")) + parseInt(localStorage.getItem("priceTypeTemp"))
+  // const rawNameCatalog = localStorage.getItem("nameCatalog");
+  // const rawTypeCatalog = localStorage.getItem("typeCatalog");
+  // const rawTotalPrice = localStorage.getItem("totalPrice");
+  // let rawExtras = "";
+  // // {selectedExtras.map((extra) => {
+  // //     rawExtras = "{id_etc : ",extra.id,":" extra.description"}";
+  // // })}
+  // const rawExtras = localStorage.getItem("selectedExtras");
+
+  // const rawTransaction = ([{ "Nama Catalog": rawNameCatalog }, { "Paket": rawTypeCatalog }, {"Total Harga" : rawTotalPrice} , { "Tambahan" : rawExtras}]);
+  // console.log(rawTransaction)
+
+  const selectedExtras =
+    JSON.parse(localStorage.getItem("selectedExtras")) || [];
+
+  const personCount = parseInt(localStorage.getItem("person")) || 1; // Ambil jumlah orang, default 1
+
+  const mappedExtras = selectedExtras.map((extra) => {
+    const isPersonRelated = extra.description.includes("Tambah Orang");
+    const price = isPersonRelated ? extra.price * personCount : extra.price;
+
+    return {
+      id: extra.id,
+      description: extra.description,
+      price: price,
+    };
+  });
+
+  localStorage.setItem("mappedExtras", JSON.stringify(mappedExtras));
+
   const navigate = useNavigate();
   useEffect(() => {
     const savedNameSender = localStorage.getItem("nameSender") || "";
-    const savedNumberBankAccount = localStorage.getItem("numberBankAccount") || "";
+    const savedNumberBankAccount =
+      localStorage.getItem("numberBankAccount") || "";
     const savedTransfer = localStorage.getItem("transfer") || "";
 
     setFormData({
@@ -71,7 +104,7 @@ const ProofPayment = () => {
     data.append("email", localStorage.getItem("email") || "");
     data.append("phone_number", localStorage.getItem("phoneNumber") || "");
     data.append("person", localStorage.getItem("person") || "");
-    data.append("price", localStorage.getItem("price") || ""); // Total harga dari state
+    data.append("price", localStorage.getItem("totalPrice") || ""); // Total harga dari state
     data.append("notes", localStorage.getItem("notes") || "");
     data.append("schedule", localStorage.getItem("dateTime") || "");
     data.append("catalog_id", localStorage.getItem("catalog_id") || ""); // Bisa disesuaikan sesuai ID katalog yang dimiliki
@@ -79,10 +112,14 @@ const ProofPayment = () => {
     data.append("transfer_nominal", formData.transfer);
     data.append("account_name", formData.nameSender);
     data.append("account_number", formData.numberBankAccount);
-    data.append('image', image); // Gambar
+    data.append(
+      "catalog_type_id",
+      localStorage.getItem("catalog_type_id") || ""
+    );
+    data.append("raw_transaction", localStorage.getItem("mappedExtras"));
+    data.append("image", image); // Gambar
     // Validasi apakah gambar sudah diunggah
 
-    
     Swal.fire({
       title: "Pastikan Informasi yang dimasukan benar!",
       text: "Jika terjadi kesalahan maka tidak bisa dirubah lagi!",
@@ -90,18 +127,32 @@ const ProofPayment = () => {
       showCancelButton: true,
       confirmButtonColor: "#3085d6",
       cancelButtonColor: "#d33",
-      confirmButtonText: "Sudah benar, konfirmasi pembayaran!"
+      confirmButtonText: "Sudah benar, konfirmasi pembayaran!",
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          // Kirim POST request ke server
-          const response = await axios.post("http://localhost:3000/api/v1/booking/add", data, {
-            headers: {
-              "Content-Type": "multipart/form-data",
+          Swal.fire({
+            title: "Mengirim Data...",
+            text: "Mohon tunggu, sedang memproses booking.",
+            allowOutsideClick: false,
+            didOpen: () => {
+              Swal.showLoading();
             },
           });
-  
+          // Kirim POST request ke server
+          const response = await axios.post(
+            "http://localhost:3000/api/v1/booking/add",
+            data,
+            {
+              headers: {
+                "Content-Type": "multipart/form-data",
+              },
+            }
+          );
+
           if (response.status === 200) {
+
+            Swal.close(); // Tutup loading dialog
             Swal.fire({
               title: "Success!",
               text: "Booking berhasil!",
@@ -132,7 +183,7 @@ const ProofPayment = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen overflow-y-auto">
+    <div className="bg-gray-50 flex items-center justify-center min-h-screen overflow-y-auto">
       <div className="w-full flex items-center justify-center p-4">
         <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-md overflow-y-auto">
           <div className="text-center mb-6">
@@ -161,24 +212,64 @@ const ProofPayment = () => {
             </div>
           ) : paymentMethod === "bca" ? (
             <div className="bg-gray-100 p-4 rounded-lg mb-6">
-              <p className="text-center">Total Harga Rp.{totalPrice}</p>
               <p className="text-center mt-2">Nomor Rekening BCA: 0461403505</p>
               <p className="text-center mt-2">A/N: Widi Hardhanu</p>
             </div>
           ) : paymentMethod === "mandiri" ? (
             <div className="bg-gray-100 p-4 rounded-lg mb-6">
-              <p className="text-center">Total Harga Rp.{totalPrice}</p>
-              <p className="text-center mt-2">Nomor Rekening Mandiri: 1390009952676</p>
+              <p className="text-center mt-2">
+                Nomor Rekening Mandiri: 1390009952676
+              </p>
               <p className="text-center mt-2">A/N: Widi Hardhanu</p>
             </div>
           ) : (
             <div className="bg-gray-100 p-4 rounded-lg mb-6">
-              <p className="text-center">{totalPrice}</p>
               <p className="text-center mt-2">
                 Pilih metode pembayaran di halaman sebelumnya.
               </p>
             </div>
           )}
+          <div className="bg-gray-100 p-4 rounded-lg mb-6">
+            <p className="text-center font-bold mb-4">
+              <i className="fas fa-receipt"></i> Rincian Pembelian
+            </p>
+            <div className="flex justify-between mb-2">
+              <p>{localStorage.getItem("nameCatalog")}</p>
+            </div>
+            <div className="flex justify-between mb-2">
+              <p>Paket {localStorage.getItem("typeCatalog")}</p>
+              <p>Rp{priceCatalog.toLocaleString("id-ID")}</p>
+            </div>
+            <div className="flex justify-between mb-2">
+              <p>
+                <b>Tambahan Lainnya</b>
+              </p>
+              <p></p>
+            </div>
+            {selectedExtras.map((extra) => {
+              const isPersonRelated =
+                extra.description.includes("Tambah Orang");
+              const price = isPersonRelated
+                ? extra.price * personCount
+                : extra.price;
+
+              return (
+                <div className="flex justify-between mb-2" key={extra.id}>
+                  <p>{extra.description}</p>
+                  <p>Rp{price.toLocaleString("id-ID")}</p>
+                </div>
+              );
+            })}
+            <div className="flex justify-between font-bold">
+              <p>Total Pembayaran</p>
+              <p>
+                Rp
+                {parseInt(localStorage.getItem("totalPrice")).toLocaleString(
+                  "id-ID"
+                )}
+              </p>
+            </div>
+          </div>
           <form className="flex flex-col flex-grow" onSubmit={handleSubmit}>
             <div className="mb-4">
               <label className="block mb-2">Nominal Transfer</label>
@@ -201,7 +292,9 @@ const ProofPayment = () => {
               />
             </div>
             <div className="mb-4">
-              <label className="block mb-2">Nomor Rekening/Nomor E-Wallet</label>
+              <label className="block mb-2">
+                Nomor Rekening/Nomor E-Wallet
+              </label>
               <input
                 type="text"
                 className="w-full p-2 border rounded"
@@ -225,7 +318,11 @@ const ProofPayment = () => {
                     src={URL.createObjectURL(image)}
                     alt="Preview"
                     className="rounded"
-                    style={{ maxWidth: "100%", maxHeight: "200px", objectFit: "contain" }}
+                    style={{
+                      maxWidth: "100%",
+                      maxHeight: "200px",
+                      objectFit: "contain",
+                    }}
                   />
                 </div>
               )}
